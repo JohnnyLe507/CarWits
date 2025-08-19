@@ -1,29 +1,33 @@
-import { Router } from 'express';
-import carsData from '../data/cars_data.json';
-import { Car } from '../types';
+import { Router, Request, Response } from "express";
+import {
+    getAveragePriceByYear,
+    getMarketShareByBrand,
+    getHorsepowerVsPrice,
+    getBodyStyleDistribution,
+} from "../utils/dataTransforms";
 
 const router = Router();
-const cars: Car[] = carsData as Car[];
 
-// Average MSRP by year
-router.get('/average-price-by-year', (req, res) => {
-    const yearGroups: Record<string, { total: number; count: number }> = {};
+// GET /api/stats/average-price-by-year
+router.get("/average-price-by-year", (req, res) => {
+    res.json(getAveragePriceByYear());
+});
 
-    cars.forEach((car) => {
-        const year = String(car.Year);
-        if (!yearGroups[year]) {
-            yearGroups[year] = { total: 0, count: 0 };
-        }
-        yearGroups[year].total += Number(car.MSRP);
-        yearGroups[year].count += 1;
-    });
+// GET /api/stats/market-share?year=2015
+router.get("/market-share", (req, res) => {
+    const year = req.query.year ? Number(req.query.year) : undefined;
+    res.json(getMarketShareByBrand(year));
+});
 
-    const averages = Object.entries(yearGroups).map(([year, { total, count }]) => ({
-        year,
-        avgPrice: Math.round(total / count),
-    }));
+// GET /api/stats/horsepower-vs-price
+router.get("/horsepower-vs-price", (req, res) => {
+    res.json(getHorsepowerVsPrice());
+});
 
-    res.json(averages);
+// GET /api/stats/body-style-distribution?year=2015
+router.get("/body-style-distribution", (req, res) => {
+    const year = req.query.year ? Number(req.query.year) : undefined;
+    res.json(getBodyStyleDistribution(year));
 });
 
 export default router;

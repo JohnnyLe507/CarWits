@@ -1,40 +1,35 @@
 import { Router, Request, Response } from 'express';
-import carsData from '../data/cars_data.json';  // Make sure this matches your filename
+import carsData from '../data/carsData';
 
+import { getCarsByMake, getTopPopularCars, searchCars } from "../utils/dataFilters";
 const router = Router();
 
 router.get('/', (req: Request, res: Response) => {
-    const { brand, year, fuel, minPrice, maxPrice } = req.query;
+    res.json(carsData);
+});
 
-    let filteredCars = [...(carsData as any[])];
+// GET /api/cars/make/:make
+router.get("/make/:make", (req, res) => {
+    const { make } = req.params;
+    const cars = getCarsByMake(make);
+    res.json(cars);
+});
 
-    if (brand) {
-        filteredCars = filteredCars.filter(
-            (c) => c.Make.toLowerCase() === String(brand).toLowerCase()
-        );
-    }
-    if (year) {
-        filteredCars = filteredCars.filter(
-            (c) => Number(c.Year) === Number(year)
-        );
-    }
-    if (fuel) {
-        filteredCars = filteredCars.filter(
-            (c) => c['Engine Fuel Type']?.toLowerCase().includes(String(fuel).toLowerCase())
-        );
-    }
-    if (minPrice) {
-        filteredCars = filteredCars.filter(
-            (c) => Number(c.MSRP) >= Number(minPrice)
-        );
-    }
-    if (maxPrice) {
-        filteredCars = filteredCars.filter(
-            (c) => Number(c.MSRP) <= Number(maxPrice)
-        );
-    }
+// GET /api/cars/top?limit=10
+router.get("/top", (req, res) => {
+    const limit = req.query.limit ? Number(req.query.limit) : 10;
+    const cars = getTopPopularCars(limit);
+    res.json(cars);
+});
 
-    res.json(filteredCars);
+// GET /api/cars/search?q=...
+router.get("/search", (req, res) => {
+    const { q } = req.query;
+    if (!q || typeof q !== "string") {
+        return res.status(400).json({ error: "Missing query parameter 'q'" });
+    }
+    const results = searchCars(q);
+    res.json(results);
 });
 
 export default router;
