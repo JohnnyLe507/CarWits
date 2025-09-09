@@ -16,7 +16,7 @@ router.get("/make/:make", (req, res) => {
 });
 
 // GET /api/cars/top?limit=10
-router.get("/top", (req, res) => {
+router.get("/top-popular", (req, res) => {
     const limit = req.query.limit ? Number(req.query.limit) : 10;
     const cars = getTopPopularCars(limit);
     res.json(cars);
