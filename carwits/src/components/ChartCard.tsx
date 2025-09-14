@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
-import { Line, Bar, Scatter, Pie } from "react-chartjs-2";
+import { Line, Bar, Scatter, Pie, Doughnut } from "react-chartjs-2";
 
 interface ChartCardProps {
   title: string;
   data?: any; // Chart.js data object
-  type: "line" | "bar" | "scatter" | "pie";
+  type: "line" | "bar" | "scatter" | "pie" | "doughnut";
 }
 
 const ChartCard: React.FC<ChartCardProps> = ({ title, data, type }) => {
@@ -19,6 +19,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ title, data, type }) => {
       case "bar": return <Bar data={safeData} />;
       case "scatter": return <Scatter data={safeData} />;
       case "pie": return <Pie data={safeData} />;
+      case "doughnut": return <Doughnut data={safeData} />;
       default: return null;
     }
   };
