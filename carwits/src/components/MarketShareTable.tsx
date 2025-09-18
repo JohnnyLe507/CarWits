@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 interface Car {
   make: string;
@@ -84,53 +83,41 @@ const MarketShareTable: React.FC<MarketShareTableProps> = ({ cars }) => {
     }
   };
 
-  const renderSortIcon = (key: SortKey) => {
-    if (sortKey !== key) return <ArrowUpDown className="w-4 h-4 inline ml-1 text-gray-400" />;
-    return sortOrder === "asc" ? (
-      <ArrowUp className="w-4 h-4 inline ml-1 text-purple-400" />
-    ) : (
-      <ArrowDown className="w-4 h-4 inline ml-1 text-purple-400" />
-    );
-  };
-
   return (
-    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl shadow-lg p-4 max-h-96 overflow-y-auto">
-      <h2 className="text-lg font-bold mb-4 text-white">🏢 Company Market Share</h2>
-      <table className="w-full text-sm border-collapse text-gray-200">
-        <thead className="sticky top-0 bg-black/40 backdrop-blur-md">
-          <tr>
+    <div className="bg-white/70 rounded-xl shadow-lg p-4 max-h-96 overflow-y-auto">
+      <h2 className="text-lg font-bold mb-4">Company Market Share</h2>
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="text-left border-b border-gray-300">
             <th
-              className="py-2 px-3 cursor-pointer hover:text-purple-400 transition"
+              className="py-2 px-3 cursor-pointer hover:underline"
               onClick={() => handleSort("make")}
             >
-              Company {renderSortIcon("make")}
+              Company {sortKey === "make" && (sortOrder === "asc" ? "↑" : "↓")}
             </th>
             <th
-              className="py-2 px-3 cursor-pointer hover:text-purple-400 transition"
+              className="py-2 px-3 cursor-pointer hover:underline"
               onClick={() => handleSort("avgPrice")}
             >
-              YTD Avg Price {renderSortIcon("avgPrice")}
+              YTD Avg Price {sortKey === "avgPrice" && (sortOrder === "asc" ? "↑" : "↓")}
             </th>
             <th
-              className="py-2 px-3 cursor-pointer hover:text-purple-400 transition"
+              className="py-2 px-3 cursor-pointer hover:underline"
               onClick={() => handleSort("count")}
             >
-              Market Share {renderSortIcon("count")}
+              Market Share {sortKey === "count" && (sortOrder === "asc" ? "↑" : "↓")}
             </th>
           </tr>
         </thead>
         <tbody>
           {sortedStats.map(({ make, avgPrice, count }) => (
-            <tr
-              key={make}
-              className="border-b border-white/10 hover:bg-white/5 transition"
-            >
-              <td className="py-2 px-3 font-medium">{make}</td>
-              <td className="py-2 px-3 font-mono">${avgPrice.toLocaleString()}</td>
+            <tr key={make} className="border-b border-gray-200">
+              <td className="py-2 px-3">{make}</td>
+              <td className="py-2 px-3">${avgPrice.toLocaleString()}</td>
               <td className="py-2 px-3">
-                <div className="relative h-6 bg-white/10 rounded overflow-hidden">
+                <div className="relative h-6 bg-gray-200 rounded">
                   <div
-                    className="absolute left-0 top-0 h-6 bg-gradient-to-r from-purple-500 to-pink-500 flex items-center px-2 text-xs font-bold text-white transition-all duration-500"
+                    className="absolute left-0 top-0 h-6 bg-blue-500 rounded text-white text-xs flex items-center px-2"
                     style={{ width: `${(count / maxCount) * 100}%` }}
                   >
                     {count}

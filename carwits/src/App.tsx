@@ -26,21 +26,11 @@ ChartJS.register(
   Filler
 );
 
-ChartJS.defaults.color = "#f1f5f9";
-ChartJS.defaults.borderColor = "rgba(255,255,255,0.2)";
-ChartJS.defaults.plugins.legend.labels.color = "#f1f5f9";
-ChartJS.defaults.plugins.title.color = "#f1f5f9";
-ChartJS.defaults.plugins.tooltip.backgroundColor = "rgba(0,0,0,0.7)";
-ChartJS.defaults.plugins.tooltip.titleColor = "#fff";
-ChartJS.defaults.plugins.tooltip.bodyColor = "#f1f5f9";
-
-import { AnimatePresence, motion } from "framer-motion";
 import type { ChartData } from "chart.js";
 import ChartCard from "./components/ChartCard";
 import SearchPanel from "./components/SearchPanel";
 import MarketShareTable from "./components/MarketShareTable";
 import DetailedCarTable from "./components/DetailedCarTable";
-import RegionMap from "./components/RegionMap";
 
 interface Filters {
   make: string;
@@ -90,7 +80,8 @@ const App: React.FC = () => {
 
   const [view, setView] = useState<"overview" | "detail">("overview");
 
-  // Fetch cars
+
+  // Fetch cars from backend
   useEffect(() => {
     const fetchCars = async () => {
       try {
@@ -102,39 +93,51 @@ const App: React.FC = () => {
         console.error("Failed to fetch cars:", err);
       }
     };
+
     fetchCars();
   }, []);
 
-  // Filtering
+  // --- Filtering Logic ---
   useEffect(() => {
     let cars = allCars;
-    if (filters.make !== "All") cars = cars.filter((c) => c.make === filters.make);
-    if (filters.fuelType !== "All") cars = cars.filter((c) => c.fuelType === filters.fuelType);
+
+    if (filters.make !== "All") {
+      cars = cars.filter((c) => c.make === filters.make);
+    }
+
+    if (filters.fuelType !== "All") {
+      cars = cars.filter((c) => c.fuelType === filters.fuelType);
+    }
+
     setFilteredCars(cars);
   }, [filters, allCars]);
 
-  // Charts
+  // Update charts only when filteredCars changes
   useEffect(() => {
     updateFuelTypes(filteredCars);
     updateBodyStyles(filteredCars);
-    if (filteredCars.length > 0) {
-      const label = filters.make === "All" ? "All Makes" : filters.make;
-      updateLineChart(filteredCars, label);
-    } else {
-      setAvgPriceData(null);
+
+    if (filters.make !== "All") {
+      updateLineChart(filteredCars, filters.make);
     }
   }, [filteredCars, filters.make]);
 
+
   const updateLineChart = (cars: Car[], label: string) => {
     if (cars.length === 0) return;
+
     const grouped: Record<number, number[]> = {};
     cars.forEach((c) => {
       if (!grouped[c.year]) grouped[c.year] = [];
       grouped[c.year].push(c.msrp);
     });
-    const avgByYear = years.map((y) =>
-      grouped[y] ? grouped[y].reduce((a, b) => a + b, 0) / grouped[y].length : 0
-    );
+
+    const avgByYear = years.map((y) => {
+      if (!grouped[y]) return 0;
+      const vals = grouped[y];
+      return vals.reduce((a, b) => a + b, 0) / vals.length;
+    });
+
     setAvgPriceData({
       labels: years,
       datasets: [
@@ -155,6 +158,7 @@ const App: React.FC = () => {
       acc[c.fuelType] = (acc[c.fuelType] || 0) + 1;
       return acc;
     }, {});
+
     setFuelTypes({
       labels: Object.keys(counts),
       datasets: [
@@ -173,6 +177,7 @@ const App: React.FC = () => {
       acc[c.style] = (acc[c.style] || 0) + 1;
       return acc;
     }, {});
+
     setBodyStyles({
       labels: Object.keys(counts),
       datasets: [
@@ -185,10 +190,12 @@ const App: React.FC = () => {
     });
   };
 
-  // KPIs
+  // --- KPI calculations ---
   const totalCars = filteredCars.length;
+
   const avgMSRP =
     totalCars > 0 ? filteredCars.reduce((sum, c) => sum + (c.msrp || 0), 0) / totalCars : 0;
+
   const avgMPG =
     totalCars > 0
       ? filteredCars.reduce(
@@ -196,6 +203,7 @@ const App: React.FC = () => {
         0
       ) / totalCars
       : 0;
+
   const topFuel =
     totalCars > 0
       ? Object.entries(
@@ -207,121 +215,78 @@ const App: React.FC = () => {
       : "N/A";
 
   return (
-    <div className="relative min-h-screen flex flex-col overflow-hidden">
-      {/* Background video */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-      >
-        <source src="/background.mp4" type="video/mp4" />
-      </video>
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-purple-600 to-pink-500 text-white p-6 shadow-lg flex justify-center items-center">
+        <h1 className="text-3xl font-bold">🚗 CarWits Dashboard</h1>
+      </header>
 
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-black/20" />
-
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Header */}
-        <header className="absolute top-0 left-0 w-full flex justify-between items-center p-4 z-20 bg-black/30 backdrop-blur-md border-b border-white/10">
-          <h1 className="text-2xl font-bold text-white">🚗 CarWits</h1>
-          <div className="flex gap-2">
+      {/* Main Content */}
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <div className="p-4 mb-6 ml-4 rounded-lg">
+          <div className="mb-4 flex gap-2">
             <button
               onClick={() => setView("overview")}
-              className={`px-3 py-1 rounded-md font-semibold text-sm ${view === "overview"
-                ? "bg-purple-600 text-white"
-                : "bg-white/20 text-gray-200 backdrop-blur-md"
+              className={`px-4 py-2 rounded-lg font-semibold ${view === "overview" ? "bg-purple-600 text-white" : "bg-gray-200 text-gray-800"
                 }`}
             >
               Overview
             </button>
             <button
               onClick={() => setView("detail")}
-              className={`px-3 py-1 rounded-md font-semibold text-sm ${view === "detail"
-                ? "bg-purple-600 text-white"
-                : "bg-white/20 text-gray-200 backdrop-blur-md"
+              className={`px-4 py-2 rounded-lg font-semibold ${view === "detail" ? "bg-purple-600 text-white" : "bg-gray-200 text-gray-800"
                 }`}
             >
               Detail
             </button>
           </div>
-        </header>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-6 mt-16">
-          <AnimatePresence mode="wait">
-            {view === "overview" ? (
-              <motion.div
-                key="overview"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="flex gap-6"
-              >
-                {/* Left sidebar - Search Panel */}
-                <div className="w-64 shrink-0">
-                  <SearchPanel filters={filters} setFilters={setFilters} />
+          <SearchPanel filters={filters} setFilters={setFilters} />
+        </div>
+
+        {/* Dashboard Content */}
+        <div className="flex-1 p-6 space-y-6">
+          {view === "overview" ? (
+            <>
+              {/* KPI Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white p-4 rounded-2xl shadow-md">
+                  <h3 className="text-gray-500 text-sm">Total Cars</h3>
+                  <p className="text-2xl font-bold text-gray-800">{totalCars ?? 0}</p>
                 </div>
-
-                {/* Right content */}
-                <div className="flex-1 space-y-6">
-                  {/* KPIs */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
-                      <h3 className="text-gray-300 text-xs">Total Cars</h3>
-                      <p className="text-xl font-bold text-white">{totalCars ?? 0}</p>
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
-                      <h3 className="text-gray-300 text-xs">Avg MSRP</h3>
-                      <p className="text-xl font-bold text-white">
-                        {totalCars > 0 ? `$${avgMSRP.toFixed(0)}` : "—"}
-                      </p>
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
-                      <h3 className="text-gray-300 text-xs">Avg MPG</h3>
-                      <p className="text-xl font-bold text-white">
-                        {totalCars > 0 ? `${avgMPG.toFixed(1)} mpg` : "—"}
-                      </p>
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
-                      <h3 className="text-gray-300 text-xs">Top Fuel</h3>
-                      <p className="text-xl font-bold text-white">{topFuel}</p>
-                    </div>
-                  </div>
-
-                  {/* Charts */}
-                  <div className="grid gap-4 md:grid-cols-3 mt-6">
-                    <ChartCard title="📈 Average MSRP Over Time" data={avgPriceData} type="line" />
-                    <ChartCard title="Fuel Type Distribution" data={fuelTypes} type="doughnut" />
-                    <ChartCard title="Vehicle Style Popularity" data={bodyStyles} type="bar" />
-                  </div>
-
-                  {/* Map + Table */}
-                  <div className="grid gap-4 md:grid-cols-3 mt-6">
-                    <div className="col-span-2">
-                      <RegionMap />
-                    </div>
-                    <div className="max-h-[500px] overflow-y-auto">
-                      <MarketShareTable cars={filteredCars} />
-                    </div>
-                  </div>
+                <div className="bg-white p-4 rounded-2xl shadow-md">
+                  <h3 className="text-gray-500 text-sm">Avg MSRP</h3>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {totalCars > 0 ? `$${avgMSRP.toFixed(0)}` : "—"}
+                  </p>
                 </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="detail"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <DetailedCarTable cars={filteredCars} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </main>
+                <div className="bg-white p-4 rounded-2xl shadow-md">
+                  <h3 className="text-gray-500 text-sm">Avg MPG</h3>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {totalCars > 0 ? `${avgMPG.toFixed(1)} mpg` : "—"}
+                  </p>
+                </div>
+                <div className="bg-white p-4 rounded-2xl shadow-md">
+                  <h3 className="text-gray-500 text-sm">Top Fuel</h3>
+                  <p className="text-2xl font-bold text-gray-800">{topFuel}</p>
+                </div>
+              </div>
+
+              {/* Charts */}
+              <div className="grid gap-6 md:grid-cols-2">
+                <ChartCard title={`📈 Average MSRP Over Time`} data={avgPriceData} type="line" />
+                <ChartCard title="Fuel Type Distribution" data={fuelTypes} type="doughnut" />
+                <ChartCard title="Vehicle Style Popularity" data={bodyStyles} type="bar" />
+                <div className="max-h-96 overflow-y-auto">
+                  <MarketShareTable cars={filteredCars} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <DetailedCarTable cars={filteredCars} />
+          )}
+        </div>
       </div>
     </div>
   );
