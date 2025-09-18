@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 interface Car {
   make: string;
@@ -32,11 +32,14 @@ type SortKey =
   | "horsepower"
   | "cylinders";
 
+const BATCH_SIZE = 50; // number of rows added per batch
+const BATCH_DELAY = 50; // ms delay between batches
+
 const DetailedCarTable: React.FC<DetailedCarTableProps> = ({ cars }) => {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  // Precompute table data with unique IDs
+  // Precompute table data
   const tableData = useMemo(() => {
     return cars.map((c, index) => ({
       id: `${c.make}-${c.model}-${c.year}-${index}`,
@@ -72,6 +75,23 @@ const DetailedCarTable: React.FC<DetailedCarTableProps> = ({ cars }) => {
     });
   }, [tableData, sortKey, sortOrder]);
 
+  const [visibleRows, setVisibleRows] = useState<typeof sortedData>([]);
+
+  // Incrementally add rows in batches
+  useEffect(() => {
+    setVisibleRows([]); // reset when sortedData changes
+    let index = 0;
+    const addBatch = () => {
+      const nextIndex = Math.min(index + BATCH_SIZE, sortedData.length);
+      setVisibleRows(sortedData.slice(0, nextIndex));
+      index = nextIndex;
+      if (index < sortedData.length) {
+        setTimeout(addBatch, BATCH_DELAY);
+      }
+    };
+    addBatch();
+  }, [sortedData]);
+
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -85,7 +105,7 @@ const DetailedCarTable: React.FC<DetailedCarTableProps> = ({ cars }) => {
     <div className="bg-white/70 rounded-xl shadow-lg p-4 max-h-[500px] overflow-y-auto mt-6">
       <h2 className="text-lg font-bold mb-4">📋 Detailed Car Data</h2>
       <table className="w-full text-sm border-collapse">
-        <thead>
+        <thead className="bg-gray-200 sticky top-0 z-10 text-blue-600">
           <tr className="text-left border-b border-gray-300">
             <th
               className="py-2 px-3 cursor-pointer hover:underline"
@@ -135,7 +155,7 @@ const DetailedCarTable: React.FC<DetailedCarTableProps> = ({ cars }) => {
           </tr>
         </thead>
         <tbody>
-          {sortedData.map((car) => (
+          {visibleRows.map((car) => (
             <tr key={car.id} className="border-b border-gray-200">
               <td className="py-2 px-3">{car.name}</td>
               <td className="py-2 px-3">{car.make}</td>
