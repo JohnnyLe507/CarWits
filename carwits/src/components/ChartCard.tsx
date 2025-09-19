@@ -45,7 +45,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ title, data, type, options }) => 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="p-6 rounded-2xl shadow-lg bg-white/10 backdrop-blur-md border border-white/20"
+      className="p-6 rounded-2xl shadow-lg backdrop-blur-md border border-white/20"
     >
       <h3 className="text-lg font-semibold mb-4 text-white drop-shadow-sm">
         {title}

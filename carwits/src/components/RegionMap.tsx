@@ -154,7 +154,7 @@ const RegionMap: React.FC = () => {
 return (
   <div className="w-full flex justify-center">
     {/* Glass card container */}
-    <div className="w-full max-w-6xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-4 flex flex-col">
+    <div className="w-full max-w-6xl backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-4 flex flex-col">
       {/* Header */}
       <h3 className="text-lg text-center font-semibold mb-4 text-white drop-shadow-sm">
         📍 Popular Car Makes by State
