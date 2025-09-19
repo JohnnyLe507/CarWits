@@ -102,77 +102,89 @@ const DetailedCarTable: React.FC<DetailedCarTableProps> = ({ cars }) => {
   };
 
   return (
-    <div className="bg-white/70 rounded-xl shadow-lg p-4 max-h-[500px] overflow-y-auto mt-6">
-      <h2 className="text-lg font-bold mb-4">📋 Detailed Car Data</h2>
-      <table className="w-full text-sm border-collapse">
-        <thead className="bg-gray-200 sticky top-0 z-10 text-blue-600">
-          <tr className="text-left border-b border-gray-300">
-            <th
-              className="py-2 px-3 cursor-pointer hover:underline"
-              onClick={() => handleSort("name")}
-            >
-              Car Name {sortKey === "name" && (sortOrder === "asc" ? "↑" : "↓")}
-            </th>
-            <th
-              className="py-2 px-3 cursor-pointer hover:underline"
-              onClick={() => handleSort("make")}
-            >
-              Make {sortKey === "make" && (sortOrder === "asc" ? "↑" : "↓")}
-            </th>
-            <th
-              className="py-2 px-3 cursor-pointer hover:underline"
-              onClick={() => handleSort("year")}
-            >
-              Year {sortKey === "year" && (sortOrder === "asc" ? "↑" : "↓")}
-            </th>
-            <th className="py-2 px-3">Fuel</th>
-            <th
-              className="py-2 px-3 cursor-pointer hover:underline"
-              onClick={() => handleSort("msrp")}
-            >
-              MSRP {sortKey === "msrp" && (sortOrder === "asc" ? "↑" : "↓")}
-            </th>
-            <th
-              className="py-2 px-3 cursor-pointer hover:underline"
-              onClick={() => handleSort("mpg")}
-            >
-              MPG {sortKey === "mpg" && (sortOrder === "asc" ? "↑" : "↓")}
-            </th>
-            <th
-              className="py-2 px-3 cursor-pointer hover:underline"
-              onClick={() => handleSort("horsepower")}
-            >
-              HP {sortKey === "horsepower" && (sortOrder === "asc" ? "↑" : "↓")}
-            </th>
-            <th
-              className="py-2 px-3 cursor-pointer hover:underline"
-              onClick={() => handleSort("cylinders")}
-            >
-              Cylinders {sortKey === "cylinders" && (sortOrder === "asc" ? "↑" : "↓")}
-            </th>
-            <th className="py-2 px-3">Style</th>
-            <th className="py-2 px-3">Transmission</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visibleRows.map((car) => (
-            <tr key={car.id} className="border-b border-gray-200">
-              <td className="py-2 px-3">{car.name}</td>
-              <td className="py-2 px-3">{car.make}</td>
-              <td className="py-2 px-3">{car.year}</td>
-              <td className="py-2 px-3">{car.fuelType}</td>
-              <td className="py-2 px-3">
-                {car.msrp ? `$${car.msrp.toLocaleString()}` : "—"}
-              </td>
-              <td className="py-2 px-3">{car.mpg !== null ? car.mpg.toFixed(1) : "—"}</td>
-              <td className="py-2 px-3">{car.horsepower || "—"}</td>
-              <td className="py-2 px-3">{car.cylinders || "—"}</td>
-              <td className="py-2 px-3">{car.style}</td>
-              <td className="py-2 px-3">{car.transmission}</td>
+    <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-xl p-6 mt-6 border border-white/20">
+      <h2 className="text-xl font-bold mb-4 text-white drop-shadow-sm">
+        📋 Detailed Car Data
+      </h2>
+
+      <div className="overflow-x-auto max-h-[500px] overflow-y-auto rounded-xl border border-white/10">
+        <table className="w-full text-sm text-left text-gray-200">
+          {/* Table Header */}
+          <thead className="sticky top-0 z-10 bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500 animate-gradient shadow-md shadow-pink-500/20">
+            <tr>
+              <th
+                className="py-3 px-4 cursor-pointer font-semibold hover:text-purple-300 transition-colors"
+                onClick={() => handleSort("name")}
+              >
+                Car Name {sortKey === "name" && (sortOrder === "asc" ? "↑" : "↓")}
+              </th>
+              <th
+                className="py-3 px-4 cursor-pointer font-semibold hover:text-purple-300 transition-colors"
+                onClick={() => handleSort("make")}
+              >
+                Make {sortKey === "make" && (sortOrder === "asc" ? "↑" : "↓")}
+              </th>
+              <th
+                className="py-3 px-4 cursor-pointer font-semibold hover:text-purple-300 transition-colors"
+                onClick={() => handleSort("year")}
+              >
+                Year {sortKey === "year" && (sortOrder === "asc" ? "↑" : "↓")}
+              </th>
+              <th className="py-3 px-4 font-semibold">Fuel</th>
+              <th
+                className="py-3 px-4 cursor-pointer font-semibold hover:text-purple-300 transition-colors"
+                onClick={() => handleSort("msrp")}
+              >
+                MSRP {sortKey === "msrp" && (sortOrder === "asc" ? "↑" : "↓")}
+              </th>
+              <th
+                className="py-3 px-4 cursor-pointer font-semibold hover:text-purple-300 transition-colors"
+                onClick={() => handleSort("mpg")}
+              >
+                MPG {sortKey === "mpg" && (sortOrder === "asc" ? "↑" : "↓")}
+              </th>
+              <th
+                className="py-3 px-4 cursor-pointer font-semibold hover:text-purple-300 transition-colors"
+                onClick={() => handleSort("horsepower")}
+              >
+                HP {sortKey === "horsepower" && (sortOrder === "asc" ? "↑" : "↓")}
+              </th>
+              <th
+                className="py-3 px-4 cursor-pointer font-semibold hover:text-purple-300 transition-colors"
+                onClick={() => handleSort("cylinders")}
+              >
+                Cylinders {sortKey === "cylinders" && (sortOrder === "asc" ? "↑" : "↓")}
+              </th>
+              <th className="py-3 px-4 font-semibold">Style</th>
+              <th className="py-3 px-4 font-semibold">Transmission</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          {/* Table Body */}
+          <tbody>
+            {visibleRows.map((car, idx) => (
+              <tr
+                key={car.id}
+                className={`transition-colors ${idx % 2 === 0 ? "bg-white/5" : "bg-white/0"
+                  } hover:bg-purple-600/30`}
+              >
+                <td className="py-3 px-4">{car.name}</td>
+                <td className="py-3 px-4">{car.make}</td>
+                <td className="py-3 px-4">{car.year}</td>
+                <td className="py-3 px-4">{car.fuelType}</td>
+                <td className="py-3 px-4">
+                  {car.msrp ? `$${car.msrp.toLocaleString()}` : "—"}
+                </td>
+                <td className="py-3 px-4">{car.mpg !== null ? car.mpg.toFixed(1) : "—"}</td>
+                <td className="py-3 px-4">{car.horsepower || "—"}</td>
+                <td className="py-3 px-4">{car.cylinders || "—"}</td>
+                <td className="py-3 px-4">{car.style}</td>
+                <td className="py-3 px-4">{car.transmission}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

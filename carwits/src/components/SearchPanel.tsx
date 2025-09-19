@@ -35,7 +35,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters }) => {
   };
 
   return (
-    <div className="w-64 min-h-screen bg-white/10 backdrop-blur-xl border border-white/20 p-6 text-white rounded-2xl shadow-xl flex flex-col">
+    <div className="w-64 min-h-screen backdrop-blur-xl border border-white/20 p-6 text-white rounded-2xl shadow-xl flex flex-col">
       <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
         <SlidersHorizontal className="w-5 h-5 text-purple-400" />
         Filters
@@ -73,13 +73,34 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters }) => {
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Years</option>
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-            <option value="2021">2021</option>
-            <option value="2020">2020</option>
-            <option value="2019">2019</option>
+            {Object.entries(
+              Array.from({ length: 2017 - 1990 + 1 }, (_, i) => 1990 + i)
+                .reverse()
+                .reduce<Record<string, number[]>>((groups, year) => {
+                  const decade = `${Math.floor(year / 10) * 10}s`;
+                  if (!groups[decade]) groups[decade] = [];
+                  groups[decade].push(year);
+                  return groups;
+                }, {})
+            )
+              // Sort decades descending
+              .sort(([a], [b]) => (a < b ? 1 : -1))
+              .map(([decade, years]) => (
+                <optgroup
+                  key={decade}
+                  label={decade}
+                  className="bg-black/60 text-purple-300 font-semibold"
+                >
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
           </select>
         </div>
+
 
         {/* Fuel Type */}
         <div>

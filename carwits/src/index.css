@@ -14,3 +14,39 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+@keyframes gradient-wave {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@layer utilities {
+  .animate-gradient {
+    background-size: 400% 400%;
+    animation: gradient-wave 17s ease infinite;
+  }
+}
+
+/* global.css */
+select option {
+  background-color: #0a0a0a; /* dark dropdown background */
+  color: #e5e5e5;           /* light text */
+}
+
+select option:checked {
+  background-color: #6d28d9; /* purple highlight */
+  color: white;
+}
+
+select optgroup {
+  background-color: #111827; /* slightly lighter for grouping */
+  color: #a78bfa;            /* purple text */
+  font-weight: 600;
+}

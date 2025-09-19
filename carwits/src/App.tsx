@@ -70,7 +70,7 @@ interface Car {
   msrp: number;
 }
 
-const years = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023];
+const years = Array.from({ length: 2017 - 2001 + 1 }, (_, i) => 2001 + i);
 
 const App: React.FC = () => {
   const [allCars, setAllCars] = useState<Car[]>([]);
@@ -141,8 +141,8 @@ const App: React.FC = () => {
         {
           label: `Average MSRP (${label})`,
           data: avgByYear,
-          borderColor: "rgba(54, 162, 235, 1)",
-          backgroundColor: "rgba(54, 162, 235, 0.3)",
+          borderColor: "rgba(255, 69, 255, 1)",
+          backgroundColor: "rgba(161, 55, 165, 0.3)",
           tension: 0.3,
           fill: true,
         },

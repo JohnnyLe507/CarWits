@@ -94,7 +94,7 @@ const MarketShareTable: React.FC<MarketShareTableProps> = ({ cars }) => {
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl shadow-lg p-4 max-h-96 overflow-y-auto">
+    <div className="backdrop-blur-xl border border-white/20 rounded-xl shadow-lg p-4 max-h-96 overflow-y-auto">
       <h2 className="text-lg font-bold mb-4 text-white">🏢 Company Market Share</h2>
       <table className="w-full text-sm border-collapse text-gray-200">
         <thead className="sticky top-0 bg-black/40 backdrop-blur-md">
