@@ -16,7 +16,7 @@ const chartOptions: ChartOptions<"doughnut"> = {
       position: "right", // moves labels to the right side
       labels: {
         color: "white", // makes text visible on dark bg
-        padding: 20,
+        padding: 10,
         boxWidth: 12,
       },
     },

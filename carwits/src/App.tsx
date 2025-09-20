@@ -88,6 +88,15 @@ const App: React.FC = () => {
   const [bodyStyles, setBodyStyles] = useState<ChartData<"bar"> | null>(null);
   const [fuelTypes, setFuelTypes] = useState<ChartData<"doughnut"> | null>(null);
 
+  const makeOptions = Array.from(new Set(allCars.map((c) => c.make))).sort();
+  const yearOptions = Array.from(new Set(allCars.map((c) => c.year))).sort((a, b) => b - a);
+  const fuelTypeOptions = Array.from(
+    new Set(allCars.map((c) => c.fuelType).filter((ft) => ft && ft.trim() !== ""))
+  ).sort();
+  const transmissionOptions = Array.from(new Set(allCars.map((c) => c.transmission))).sort();
+  const styleOptions = Array.from(new Set(allCars.map((c) => c.style))).sort();
+  const categoryOptions = Array.from(new Set(allCars.map((c) => c.category))).sort();
+
   const [view, setView] = useState<"overview" | "detail">("overview");
 
   // Fetch cars
@@ -109,7 +118,11 @@ const App: React.FC = () => {
   useEffect(() => {
     let cars = allCars;
     if (filters.make !== "All") cars = cars.filter((c) => c.make === filters.make);
+    if (filters.year !== "All") cars = cars.filter((c) => c.year === Number(filters.year));
     if (filters.fuelType !== "All") cars = cars.filter((c) => c.fuelType === filters.fuelType);
+    if (filters.transmission !== "All") cars = cars.filter((c) => c.transmission === filters.transmission);
+    if (filters.style !== "All") cars = cars.filter((c) => c.style === filters.style);
+    if (filters.category !== "All") cars = cars.filter((c) => c.category === filters.category);
     setFilteredCars(cars);
   }, [filters, allCars]);
 
@@ -132,11 +145,11 @@ const App: React.FC = () => {
       if (!grouped[c.year]) grouped[c.year] = [];
       grouped[c.year].push(c.msrp);
     });
-    const avgByYear = years.map((y) =>
+    const avgByYear = yearOptions.map((y) =>
       grouped[y] ? grouped[y].reduce((a, b) => a + b, 0) / grouped[y].length : 0
     );
     setAvgPriceData({
-      labels: years,
+      labels: years, // Data in the range 2001-2017 looks to be more accurate
       datasets: [
         {
           label: `Average MSRP (${label})`,
@@ -152,7 +165,8 @@ const App: React.FC = () => {
 
   const updateFuelTypes = (cars: Car[]) => {
     const counts = cars.reduce((acc: Record<string, number>, c) => {
-      acc[c.fuelType] = (acc[c.fuelType] || 0) + 1;
+      const key = c.fuelType && c.fuelType.trim() !== "" ? c.fuelType : "Unknown";
+      acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
     setFuelTypes({
@@ -262,7 +276,16 @@ const App: React.FC = () => {
               >
                 {/* Left sidebar - Search Panel */}
                 <div className="w-64 shrink-0">
-                  <SearchPanel filters={filters} setFilters={setFilters} />
+                  <SearchPanel
+                    filters={filters}
+                    setFilters={setFilters}
+                    makeOptions={makeOptions}
+                    yearOptions={yearOptions}
+                    fuelTypeOptions={fuelTypeOptions}
+                    transmissionOptions={transmissionOptions}
+                    styleOptions={styleOptions}
+                    categoryOptions={categoryOptions}
+                  />
                 </div>
 
                 {/* Right content */}
