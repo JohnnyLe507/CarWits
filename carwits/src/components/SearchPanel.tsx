@@ -13,9 +13,15 @@ interface Filters {
 interface SearchPanelProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  makeOptions: string[];
+  yearOptions: number[];
+  fuelTypeOptions: string[];
+  transmissionOptions: string[];
+  styleOptions: string[];
+  categoryOptions: string[];
 }
 
-const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters }) => {
+const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters, makeOptions, yearOptions, fuelTypeOptions, transmissionOptions, styleOptions, categoryOptions }) => {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilters({
       ...filters,
@@ -54,10 +60,11 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters }) => {
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Makes</option>
-            <option value="Toyota">Toyota</option>
-            <option value="Tesla">Tesla</option>
-            <option value="Honda">Honda</option>
-            <option value="Ford">Ford</option>
+            {makeOptions.map((make) => (
+              <option key={make} value={make}>
+                {make}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -74,14 +81,12 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters }) => {
           >
             <option value="All">All Years</option>
             {Object.entries(
-              Array.from({ length: 2017 - 1990 + 1 }, (_, i) => 1990 + i)
-                .reverse()
-                .reduce<Record<string, number[]>>((groups, year) => {
-                  const decade = `${Math.floor(year / 10) * 10}s`;
-                  if (!groups[decade]) groups[decade] = [];
-                  groups[decade].push(year);
-                  return groups;
-                }, {})
+              yearOptions.reduce<Record<string, number[]>>((groups, year) => {
+                const decade = `${Math.floor(year / 10) * 10}s`;
+                if (!groups[decade]) groups[decade] = [];
+                groups[decade].push(year);
+                return groups;
+              }, {})
             )
               // Sort decades descending
               .sort(([a], [b]) => (a < b ? 1 : -1))
@@ -91,16 +96,17 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters }) => {
                   label={decade}
                   className="bg-black/60 text-purple-300 font-semibold"
                 >
-                  {years.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
+                  {years
+                    .sort((a, b) => b - a) // sort each decade’s years descending
+                    .map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
                 </optgroup>
               ))}
           </select>
         </div>
-
 
         {/* Fuel Type */}
         <div>
@@ -114,10 +120,11 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters }) => {
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Fuel Types</option>
-            <option value="Gas">Gasoline</option>
-            <option value="Diesel">Diesel</option>
-            <option value="Electric">Electric</option>
-            <option value="Hybrid">Hybrid</option>
+            {fuelTypeOptions.map((ft) => (
+              <option key={ft} value={ft}>
+                {ft}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -133,8 +140,11 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters }) => {
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Transmissions</option>
-            <option value="Automatic">Automatic</option>
-            <option value="Manual">Manual</option>
+            {transmissionOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -150,10 +160,11 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters }) => {
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Styles</option>
-            <option value="Sedan">Sedan</option>
-            <option value="SUV">SUV</option>
-            <option value="Truck">Truck</option>
-            <option value="Coupe">Coupe</option>
+            {styleOptions.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -169,10 +180,11 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters }) => {
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Categories</option>
-            <option value="Luxury">Luxury</option>
-            <option value="Compact">Compact</option>
-            <option value="Midsize">Midsize</option>
-            <option value="Pickup">Pickup</option>
+            {categoryOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
         </div>
       </div>
