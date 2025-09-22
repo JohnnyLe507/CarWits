@@ -1,5 +1,13 @@
 import React from "react";
-import { SlidersHorizontal, Car, Calendar, Fuel, Settings2, CarFront, LayoutGrid } from "lucide-react";
+import {
+  SlidersHorizontal,
+  Car,
+  Calendar,
+  Fuel,
+  Settings2,
+  CarFront,
+  LayoutGrid,
+} from "lucide-react";
 
 interface Filters {
   make: string;
@@ -10,18 +18,26 @@ interface Filters {
   category: string;
 }
 
+interface Options {
+  makes: string[];
+  years: string[];
+  fuelTypes: string[];
+  transmissions: string[];
+  styles: string[];
+  categories: string[];
+}
+
 interface SearchPanelProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
-  makeOptions: string[];
-  yearOptions: number[];
-  fuelTypeOptions: string[];
-  transmissionOptions: string[];
-  styleOptions: string[];
-  categoryOptions: string[];
+  options: Options;
 }
 
-const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters, makeOptions, yearOptions, fuelTypeOptions, transmissionOptions, styleOptions, categoryOptions }) => {
+const SearchPanel: React.FC<SearchPanelProps> = ({
+  filters,
+  setFilters,
+  options,
+}) => {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilters({
       ...filters,
@@ -60,7 +76,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters, makeOpti
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Makes</option>
-            {makeOptions.map((make) => (
+            {options.makes.map((make) => (
               <option key={make} value={make}>
                 {make}
               </option>
@@ -81,14 +97,13 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters, makeOpti
           >
             <option value="All">All Years</option>
             {Object.entries(
-              yearOptions.reduce<Record<string, number[]>>((groups, year) => {
-                const decade = `${Math.floor(year / 10) * 10}s`;
+              options.years.reduce<Record<string, number[]>>((groups, year) => {
+                const decade = `${Math.floor(Number(year) / 10) * 10}s`;
                 if (!groups[decade]) groups[decade] = [];
-                groups[decade].push(year);
+                groups[decade].push(Number(year));
                 return groups;
               }, {})
             )
-              // Sort decades descending
               .sort(([a], [b]) => (a < b ? 1 : -1))
               .map(([decade, years]) => (
                 <optgroup
@@ -97,7 +112,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters, makeOpti
                   className="bg-black/60 text-purple-300 font-semibold"
                 >
                   {years
-                    .sort((a, b) => b - a) // sort each decade’s years descending
+                    .sort((a, b) => b - a)
                     .map((year) => (
                       <option key={year} value={year}>
                         {year}
@@ -120,7 +135,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters, makeOpti
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Fuel Types</option>
-            {fuelTypeOptions.map((ft) => (
+            {options.fuelTypes.map((ft) => (
               <option key={ft} value={ft}>
                 {ft}
               </option>
@@ -140,7 +155,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters, makeOpti
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Transmissions</option>
-            {transmissionOptions.map((t) => (
+            {options.transmissions.map((t) => (
               <option key={t} value={t}>
                 {t}
               </option>
@@ -160,7 +175,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters, makeOpti
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Styles</option>
-            {styleOptions.map((s) => (
+            {options.styles.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
@@ -180,7 +195,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({ filters, setFilters, makeOpti
             className="w-full p-2 rounded-lg bg-black/40 border border-white/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           >
             <option value="All">All Categories</option>
-            {categoryOptions.map((c) => (
+            {options.categories.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
