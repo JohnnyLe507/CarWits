@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -70,12 +71,8 @@ interface Car {
   msrp: number;
 }
 
-const years = Array.from({ length: 2017 - 2001 + 1 }, (_, i) => 2001 + i);
-
 const App: React.FC = () => {
-  const [allCars, setAllCars] = useState<Car[]>([]);
-  const [filteredCars, setFilteredCars] = useState<Car[]>([]);
-  const [avgPriceData, setAvgPriceData] = useState<ChartData<"line"> | null>(null);
+  const [cars, setCars] = useState<Car[]>([]);
   const [filters, setFilters] = useState<Filters>({
     make: "All",
     year: "All",
@@ -85,151 +82,103 @@ const App: React.FC = () => {
     category: "All",
   });
 
-  const [bodyStyles, setBodyStyles] = useState<ChartData<"bar"> | null>(null);
+  // Chart + KPI data
+  const [avgPriceData, setAvgPriceData] = useState<ChartData<"line"> | null>(null);
   const [fuelTypes, setFuelTypes] = useState<ChartData<"doughnut"> | null>(null);
+  const [bodyStyles, setBodyStyles] = useState<ChartData<"bar"> | null>(null);
+  const [kpis, setKpis] = useState({
+    totalCars: 0,
+    avgMSRP: 0,
+    avgMPG: 0,
+    topFuel: "N/A",
+  });
 
-  const makeOptions = Array.from(new Set(allCars.map((c) => c.make))).sort();
-  const yearOptions = Array.from(new Set(allCars.map((c) => c.year))).sort((a, b) => b - a);
-  const fuelTypeOptions = Array.from(
-    new Set(allCars.map((c) => c.fuelType).filter((ft) => ft && ft.trim() !== ""))
-  ).sort();
-  const transmissionOptions = Array.from(new Set(allCars.map((c) => c.transmission))).sort();
-  const styleOptions = Array.from(new Set(allCars.map((c) => c.style))).sort();
-  const categoryOptions = Array.from(new Set(allCars.map((c) => c.category))).sort();
+  // Options for filters
+  const [options, setOptions] = useState<{
+    makes: string[];
+    years: string[];
+    fuelTypes: string[];
+    transmissions: string[];
+    styles: string[];
+    categories: string[];
+  }>({
+    makes: [],
+    years: [],
+    fuelTypes: [],
+    transmissions: [],
+    styles: [],
+    categories: [],
+  });
 
   const [view, setView] = useState<"overview" | "detail">("overview");
 
-  // Fetch cars
+  // Fetch cars whenever filters change
   useEffect(() => {
     const fetchCars = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/cars");
-        const data: Car[] = await res.json();
-        setAllCars(data);
-        setFilteredCars(data);
+        const res = await axios.get<Car[]>("http://localhost:3000/api/cars", { params: filters });
+        setCars(res.data);
       } catch (err) {
         console.error("Failed to fetch cars:", err);
       }
     };
     fetchCars();
+  }, [filters]);
+
+  // Fetch chart + KPI data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [fuelRes, styleRes, msrpRes, kpiRes] = await Promise.all([
+          axios.get("http://localhost:3000/api/cars/charts/fuel", { params: filters }),
+          axios.get("http://localhost:3000/api/cars/charts/styles", { params: filters }),
+          axios.get("http://localhost:3000/api/cars/charts/msrp", { params: filters }),
+          axios.get("http://localhost:3000/api/cars/kpis", { params: filters }),
+        ]);
+
+        setFuelTypes(fuelRes.data as ChartData<"doughnut">);
+        setBodyStyles(styleRes.data as ChartData<"bar">);
+        setAvgPriceData(msrpRes.data as ChartData<"line">);
+        setKpis(kpiRes.data as { totalCars: number; avgMSRP: number; avgMPG: number; topFuel: string });
+      } catch (err) {
+        console.error("Failed to fetch charts/kpis:", err);
+      }
+    };
+    fetchData();
+  }, [filters]);
+
+  // Fetch filter options
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const [makes, years, fuelTypes, transmissions, styles, categories] = await Promise.all([
+          axios.get<string[]>("http://localhost:3000/api/cars/options/make"),
+          axios.get<string[]>("http://localhost:3000/api/cars/options/year"),
+          axios.get<string[]>("http://localhost:3000/api/cars/options/fuelType"),
+          axios.get<string[]>("http://localhost:3000/api/cars/options/transmission"),
+          axios.get<string[]>("http://localhost:3000/api/cars/options/style"),
+          axios.get<string[]>("http://localhost:3000/api/cars/options/category"),
+        ]);
+
+        setOptions({
+          makes: makes.data,
+          years: years.data,
+          fuelTypes: fuelTypes.data,
+          transmissions: transmissions.data,
+          styles: styles.data,
+          categories: categories.data,
+        });
+      } catch (err) {
+        console.error("Failed to fetch options:", err);
+      }
+    };
+    fetchOptions();
   }, []);
-
-  // Filtering
-  useEffect(() => {
-    let cars = allCars;
-    if (filters.make !== "All") cars = cars.filter((c) => c.make === filters.make);
-    if (filters.year !== "All") cars = cars.filter((c) => c.year === Number(filters.year));
-    if (filters.fuelType !== "All") cars = cars.filter((c) => c.fuelType === filters.fuelType);
-    if (filters.transmission !== "All") cars = cars.filter((c) => c.transmission === filters.transmission);
-    if (filters.style !== "All") cars = cars.filter((c) => c.style === filters.style);
-    if (filters.category !== "All") cars = cars.filter((c) => c.category === filters.category);
-    setFilteredCars(cars);
-  }, [filters, allCars]);
-
-  // Charts
-  useEffect(() => {
-    updateFuelTypes(filteredCars);
-    updateBodyStyles(filteredCars);
-    if (filteredCars.length > 0) {
-      const label = filters.make === "All" ? "All Makes" : filters.make;
-      updateLineChart(filteredCars, label);
-    } else {
-      setAvgPriceData(null);
-    }
-  }, [filteredCars, filters.make]);
-
-  const updateLineChart = (cars: Car[], label: string) => {
-    if (cars.length === 0) return;
-    const grouped: Record<number, number[]> = {};
-    cars.forEach((c) => {
-      if (!grouped[c.year]) grouped[c.year] = [];
-      grouped[c.year].push(c.msrp);
-    });
-    const avgByYear = yearOptions.map((y) =>
-      grouped[y] ? grouped[y].reduce((a, b) => a + b, 0) / grouped[y].length : 0
-    );
-    setAvgPriceData({
-      labels: years, // Data in the range 2001-2017 looks to be more accurate
-      datasets: [
-        {
-          label: `Average MSRP (${label})`,
-          data: avgByYear,
-          borderColor: "rgba(255, 69, 255, 1)",
-          backgroundColor: "rgba(161, 55, 165, 0.3)",
-          tension: 0.3,
-          fill: true,
-        },
-      ],
-    });
-  };
-
-  const updateFuelTypes = (cars: Car[]) => {
-    const counts = cars.reduce((acc: Record<string, number>, c) => {
-      const key = c.fuelType && c.fuelType.trim() !== "" ? c.fuelType : "Unknown";
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {});
-    setFuelTypes({
-      labels: Object.keys(counts),
-      datasets: [
-        {
-          label: "Fuel Type Distribution",
-          data: Object.values(counts),
-          backgroundColor: ["#f87171", "#60a5fa", "#34d399", "#fbbf24", "#a78bfa"],
-          hoverOffset: 8,
-        },
-      ],
-    });
-  };
-
-  const updateBodyStyles = (cars: Car[]) => {
-    const counts = cars.reduce((acc: Record<string, number>, c) => {
-      acc[c.style] = (acc[c.style] || 0) + 1;
-      return acc;
-    }, {});
-    setBodyStyles({
-      labels: Object.keys(counts),
-      datasets: [
-        {
-          label: "Vehicle Style Popularity",
-          data: Object.values(counts),
-          backgroundColor: ["#60a5fa", "#f87171", "#34d399", "#fbbf24", "#a78bfa"],
-        },
-      ],
-    });
-  };
-
-  // KPIs
-  const totalCars = filteredCars.length;
-  const avgMSRP =
-    totalCars > 0 ? filteredCars.reduce((sum, c) => sum + (c.msrp || 0), 0) / totalCars : 0;
-  const avgMPG =
-    totalCars > 0
-      ? filteredCars.reduce(
-        (sum, c) => sum + ((c.highwayMPG || 0) + (c.cityMPG || 0)) / 2,
-        0
-      ) / totalCars
-      : 0;
-  const topFuel =
-    totalCars > 0
-      ? Object.entries(
-        filteredCars.reduce((acc: Record<string, number>, c) => {
-          acc[c.fuelType] = (acc[c.fuelType] || 0) + 1;
-          return acc;
-        }, {})
-      ).sort((a, b) => b[1] - a[1])[0][0]
-      : "N/A";
 
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden">
       {/* Background video */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-      >
+      <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
         <source src="/background.mp4" type="video/mp4" />
       </video>
 
@@ -244,8 +193,8 @@ const App: React.FC = () => {
             <button
               onClick={() => setView("overview")}
               className={`px-3 py-1 rounded-md font-semibold text-sm ${view === "overview"
-                ? "bg-purple-600 text-white"
-                : "bg-white/20 text-gray-200 backdrop-blur-md"
+                  ? "bg-purple-600 text-white"
+                  : "bg-white/20 text-gray-200 backdrop-blur-md"
                 }`}
             >
               Overview
@@ -253,8 +202,8 @@ const App: React.FC = () => {
             <button
               onClick={() => setView("detail")}
               className={`px-3 py-1 rounded-md font-semibold text-sm ${view === "detail"
-                ? "bg-purple-600 text-white"
-                : "bg-white/20 text-gray-200 backdrop-blur-md"
+                  ? "bg-purple-600 text-white"
+                  : "bg-white/20 text-gray-200 backdrop-blur-md"
                 }`}
             >
               Detail
@@ -276,16 +225,7 @@ const App: React.FC = () => {
               >
                 {/* Left sidebar - Search Panel */}
                 <div className="w-64 shrink-0">
-                  <SearchPanel
-                    filters={filters}
-                    setFilters={setFilters}
-                    makeOptions={makeOptions}
-                    yearOptions={yearOptions}
-                    fuelTypeOptions={fuelTypeOptions}
-                    transmissionOptions={transmissionOptions}
-                    styleOptions={styleOptions}
-                    categoryOptions={categoryOptions}
-                  />
+                  <SearchPanel filters={filters} setFilters={setFilters} options={options} />
                 </div>
 
                 {/* Right content */}
@@ -294,23 +234,23 @@ const App: React.FC = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
                       <h3 className="text-gray-300 text-xs">Total Cars</h3>
-                      <p className="text-xl font-bold text-white">{totalCars ?? 0}</p>
+                      <p className="text-xl font-bold text-white">{kpis.totalCars}</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
                       <h3 className="text-gray-300 text-xs">Avg MSRP</h3>
                       <p className="text-xl font-bold text-white">
-                        {totalCars > 0 ? `$${avgMSRP.toFixed(0)}` : "—"}
+                        {kpis.totalCars > 0 ? `$${kpis.avgMSRP.toFixed(0)}` : "—"}
                       </p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
                       <h3 className="text-gray-300 text-xs">Avg MPG</h3>
                       <p className="text-xl font-bold text-white">
-                        {totalCars > 0 ? `${avgMPG.toFixed(1)} mpg` : "—"}
+                        {kpis.totalCars > 0 ? `${kpis.avgMPG.toFixed(1)} mpg` : "—"}
                       </p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
                       <h3 className="text-gray-300 text-xs">Top Fuel</h3>
-                      <p className="text-xl font-bold text-white">{topFuel}</p>
+                      <p className="text-xl font-bold text-white">{kpis.topFuel}</p>
                     </div>
                   </div>
 
@@ -327,7 +267,7 @@ const App: React.FC = () => {
                       <RegionMap />
                     </div>
                     <div className="max-h-[500px] overflow-y-auto">
-                      <MarketShareTable cars={filteredCars} />
+                      <MarketShareTable cars={cars} />
                     </div>
                   </div>
                 </div>
@@ -340,7 +280,7 @@ const App: React.FC = () => {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <DetailedCarTable cars={filteredCars} />
+                <DetailedCarTable cars={cars} />
               </motion.div>
             )}
           </AnimatePresence>

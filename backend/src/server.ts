@@ -2,7 +2,6 @@ import express, { Request, Response, NextFunction  } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import carRoutes from './routes/cars';
-import statsRoutes from './routes/stats';
 
 dotenv.config();
 const app = express();
@@ -14,7 +13,6 @@ app.get("/", (req, res) => {
 });
 
 app.use('/api/cars', carRoutes);
-app.use('/api/stats', statsRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
