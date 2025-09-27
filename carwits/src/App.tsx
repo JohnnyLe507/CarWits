@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
+import React from "react";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -36,12 +37,14 @@ ChartJS.defaults.plugins.tooltip.titleColor = "#fff";
 ChartJS.defaults.plugins.tooltip.bodyColor = "#f1f5f9";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ChartData } from "chart.js";
 import ChartCard from "./components/ChartCard";
 import SearchPanel from "./components/SearchPanel";
 import MarketShareTable from "./components/MarketShareTable";
 import DetailedCarTable from "./components/DetailedCarTable";
 import RegionMap from "./components/RegionMap";
+import api from "./Api";
 
 interface Filters {
   make: string;
@@ -71,9 +74,39 @@ interface Car {
   msrp: number;
 }
 
+const emptyDoughnut: ChartData<"doughnut"> = {
+  labels: [],
+  datasets: [{ data: [], backgroundColor: [] }],
+};
+
+const emptyBar: ChartData<"bar"> = {
+  labels: [],
+  datasets: [{ data: [], backgroundColor: [] }],
+};
+
+const emptyLine: ChartData<"line"> = {
+  labels: [],
+  datasets: [{ data: [], borderColor: [], backgroundColor: [], fill: false }],
+};
+
+const emptyKpis = {
+  totalCars: 0,
+  avgMSRP: 0,
+  avgMPG: 0,
+  topFuel: "—",
+};
+
+const emptyOptions = {
+  makes: [],
+  years: [],
+  fuelTypes: [],
+  transmissions: [],
+  styles: [],
+  categories: [],
+};
+
 const App: React.FC = () => {
-  const [cars, setCars] = useState<Car[]>([]);
-  const [filters, setFilters] = useState<Filters>({
+const [filters, setFilters] = useState<Filters>({
     make: "All",
     year: "All",
     fuelType: "All",
@@ -81,107 +114,135 @@ const App: React.FC = () => {
     style: "All",
     category: "All",
   });
-
-  // Chart + KPI data
-  const [avgPriceData, setAvgPriceData] = useState<ChartData<"line"> | null>(null);
-  const [fuelTypes, setFuelTypes] = useState<ChartData<"doughnut"> | null>(null);
-  const [bodyStyles, setBodyStyles] = useState<ChartData<"bar"> | null>(null);
-  const [kpis, setKpis] = useState({
-    totalCars: 0,
-    avgMSRP: 0,
-    avgMPG: 0,
-    topFuel: "N/A",
-  });
-
-  // Options for filters
-  const [options, setOptions] = useState<{
-    makes: string[];
-    years: string[];
-    fuelTypes: string[];
-    transmissions: string[];
-    styles: string[];
-    categories: string[];
-  }>({
-    makes: [],
-    years: [],
-    fuelTypes: [],
-    transmissions: [],
-    styles: [],
-    categories: [],
-  });
-
   const [view, setView] = useState<"overview" | "detail">("overview");
 
-  // Fetch cars whenever filters change
-  useEffect(() => {
-    const fetchCars = async () => {
-      try {
-        const res = await axios.get<Car[]>("http://localhost:3000/api/cars", { params: filters });
-        setCars(res.data);
-      } catch (err) {
-        console.error("Failed to fetch cars:", err);
-      }
-    };
-    fetchCars();
-  }, [filters]);
+  const queryClient = useQueryClient();
 
-  // Fetch chart + KPI data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [fuelRes, styleRes, msrpRes, kpiRes] = await Promise.all([
-          axios.get("http://localhost:3000/api/cars/charts/fuel", { params: filters }),
-          axios.get("http://localhost:3000/api/cars/charts/styles", { params: filters }),
-          axios.get("http://localhost:3000/api/cars/charts/msrp", { params: filters }),
-          axios.get("http://localhost:3000/api/cars/kpis", { params: filters }),
-        ]);
+  // Invalidate relevant queries when filters change
+  const handleFilterChange = (newFilters: Filters) => {
+    setFilters(newFilters);
+    queryClient.invalidateQueries({ queryKey: ["cars"] });
+    queryClient.invalidateQueries({ queryKey: ["charts"] });
+    queryClient.invalidateQueries({ queryKey: ["kpis"] });
+  };
 
-        setFuelTypes(fuelRes.data as ChartData<"doughnut">);
-        setBodyStyles(styleRes.data as ChartData<"bar">);
-        setAvgPriceData(msrpRes.data as ChartData<"line">);
-        setKpis(kpiRes.data as { totalCars: number; avgMSRP: number; avgMPG: number; topFuel: string });
-      } catch (err) {
-        console.error("Failed to fetch charts/kpis:", err);
-      }
-    };
-    fetchData();
-  }, [filters]);
+  const prefetchDetailData = () => {
+    queryClient.prefetchQuery({
+      queryKey: ["cars", filters],
+      queryFn: async () => {
+        const res = await api.get<Car[]>("/api/cars", { params: filters });
+        return res.data;
+      },
+    });
+  };
 
-  // Fetch filter options
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [makes, years, fuelTypes, transmissions, styles, categories] = await Promise.all([
-          axios.get<string[]>("http://localhost:3000/api/cars/options/make"),
-          axios.get<string[]>("http://localhost:3000/api/cars/options/year"),
-          axios.get<string[]>("http://localhost:3000/api/cars/options/fuelType"),
-          axios.get<string[]>("http://localhost:3000/api/cars/options/transmission"),
-          axios.get<string[]>("http://localhost:3000/api/cars/options/style"),
-          axios.get<string[]>("http://localhost:3000/api/cars/options/category"),
-        ]);
+  const prefetchOverviewData = () => {
+    queryClient.prefetchQuery({
+      queryKey: ["charts", "fuel", filters],
+      queryFn: async () => {
+        const res = await api.get("/api/cars/charts/fuel", { params: filters });
+        return res.data as ChartData<"doughnut">;
+      },
+    });
 
-        setOptions({
-          makes: makes.data,
-          years: years.data,
-          fuelTypes: fuelTypes.data,
-          transmissions: transmissions.data,
-          styles: styles.data,
-          categories: categories.data,
-        });
-      } catch (err) {
-        console.error("Failed to fetch options:", err);
-      }
-    };
-    fetchOptions();
-  }, []);
+    queryClient.prefetchQuery({
+      queryKey: ["charts", "styles", filters],
+      queryFn: async () => {
+        const res = await api.get("/api/cars/charts/styles", { params: filters });
+        return res.data as ChartData<"bar">;
+      },
+    });
 
+    queryClient.prefetchQuery({
+      queryKey: ["charts", "msrp", filters],
+      queryFn: async () => {
+        const res = await api.get("/api/cars/charts/msrp", { params: filters });
+        return res.data as ChartData<"line">;
+      },
+    });
+
+    queryClient.prefetchQuery({
+      queryKey: ["kpis", filters],
+      queryFn: async () => {
+        const res = await api.get("/api/cars/kpis", { params: filters });
+        return res.data as typeof emptyKpis;
+      },
+    });
+  };
+
+
+  // React Query Fetchers
+
+  const { data: cars = [] } = useQuery({
+    queryKey: ["cars", filters],
+    queryFn: async () => {
+      const res = await api.get<Car[]>("/api/cars", { params: filters });
+      return res.data;
+    },
+    placeholderData: (prev) => prev,
+  });
+
+  const { data: fuelTypes = emptyDoughnut } = useQuery({
+    queryKey: ["charts", "fuel", filters],
+    queryFn: async () => {
+      const res = await api.get("/api/cars/charts/fuel", { params: filters });
+      return res.data as ChartData<"doughnut">;
+    },
+    placeholderData: (prev) => prev ?? emptyDoughnut,
+  });
+
+  const { data: bodyStyles = emptyBar } = useQuery({
+    queryKey: ["charts", "styles", filters],
+    queryFn: async () => {
+      const res = await api.get("/api/cars/charts/styles", { params: filters });
+      return res.data as ChartData<"bar">;
+    },
+    placeholderData: (prev) => prev ?? emptyBar,
+  });
+
+  const { data: avgPriceData = emptyLine } = useQuery({
+    queryKey: ["charts", "msrp", filters],
+    queryFn: async () => {
+      const res = await api.get("/api/cars/charts/msrp", { params: filters });
+      return res.data as ChartData<"line">;
+    },
+    placeholderData: (prev) => prev ?? emptyLine,
+  });
+
+  const { data: kpis = emptyKpis } = useQuery({
+    queryKey: ["kpis", filters],
+    queryFn: async () => {
+      const res = await api.get("/api/cars/kpis", { params: filters });
+      return res.data as typeof emptyKpis;
+    },
+    placeholderData: (prev) => prev ?? emptyKpis,
+  });
+
+  const { data: options = emptyOptions } = useQuery({
+    queryKey: ["options"],
+    queryFn: async () => {
+      const [makes, years, fuelTypes, transmissions, styles, categories] = await Promise.all([
+        api.get<string[]>("/api/cars/options/make"),
+        api.get<string[]>("/api/cars/options/year"),
+        api.get<string[]>("/api/cars/options/fuelType"),
+        api.get<string[]>("/api/cars/options/transmission"),
+        api.get<string[]>("/api/cars/options/style"),
+        api.get<string[]>("/api/cars/options/category"),
+      ]);
+      return {
+        makes: makes.data,
+        years: years.data,
+        fuelTypes: fuelTypes.data,
+        transmissions: transmissions.data,
+        styles: styles.data,
+        categories: categories.data,
+      };
+    },
+    staleTime: Infinity,
+  });
+  
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden">
-      {/* Background video */}
-      <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
-        <source src="/background.mp4" type="video/mp4" />
-      </video>
-
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/20" />
 
@@ -191,19 +252,23 @@ const App: React.FC = () => {
           <h1 className="text-2xl font-bold text-white">🚗 CarWits</h1>
           <div className="flex gap-2">
             <button
+              onMouseEnter={prefetchOverviewData}
+              onFocus={prefetchOverviewData}
               onClick={() => setView("overview")}
               className={`px-3 py-1 rounded-md font-semibold text-sm ${view === "overview"
-                  ? "bg-purple-600 text-white"
-                  : "bg-white/20 text-gray-200 backdrop-blur-md"
+                ? "bg-purple-600 text-white"
+                : "bg-white/20 text-gray-200 backdrop-blur-md"
                 }`}
             >
               Overview
             </button>
             <button
+              onMouseEnter={prefetchDetailData}
+              onFocus={prefetchDetailData}
               onClick={() => setView("detail")}
               className={`px-3 py-1 rounded-md font-semibold text-sm ${view === "detail"
-                  ? "bg-purple-600 text-white"
-                  : "bg-white/20 text-gray-200 backdrop-blur-md"
+                ? "bg-purple-600 text-white"
+                : "bg-white/20 text-gray-200 backdrop-blur-md"
                 }`}
             >
               Detail
@@ -225,7 +290,7 @@ const App: React.FC = () => {
               >
                 {/* Left sidebar - Search Panel */}
                 <div className="w-64 shrink-0">
-                  <SearchPanel filters={filters} setFilters={setFilters} options={options} />
+                  <SearchPanel filters={filters} onFilterChange={handleFilterChange} options={options} />
                 </div>
 
                 {/* Right content */}
