@@ -29,24 +29,24 @@ interface Options {
 
 interface SearchPanelProps {
   filters: Filters;
-  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  onFilterChange: (newFilters: Filters) => void;
   options: Options;
 }
 
 const SearchPanel: React.FC<SearchPanelProps> = ({
   filters,
-  setFilters,
+  onFilterChange,
   options,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFilters({
+    onFilterChange({
       ...filters,
       [e.target.name]: e.target.value,
     });
   };
 
   const resetFilters = () => {
-    setFilters({
+    onFilterChange({
       make: "All",
       year: "All",
       fuelType: "All",
