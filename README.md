@@ -20,7 +20,8 @@ Built for speed and clarity, CarWits leverages React and modern web tools to pro
 - [Usage](#usage)
 - [API Overview](#api-overview)
   - [Cars](#cars)
-  - [Filters & Queries](#filters--queries)
+  - [Charts](#charts)
+  - [KPIs](#kpis)
 - [Data Source](#data-source)
 
 ---
@@ -99,6 +100,65 @@ Here’s a preview of CarWits in action:
 
 ### Usage
 - Visit http://localhost:5173 for the frontend.
+---
+
+## API Overview
+Base URL: `http://localhost:3000/api/cars`
+
+### Cars
+- **GET `/`**  
+  Returns a filtered list of cars.  
+
+  **Query Parameters (optional):**  
+  - `make` – Car manufacturer  
+  - `year` – Year of manufacture  
+  - `fuelType` – Type of fuel  
+  - `transmission` – Transmission type  
+  - `style` – Vehicle body style  
+  - `category` – Vehicle category  
+
+  ✅ All filters accept `"All"` to bypass filtering.
+
+---
+
+### Charts
+These endpoints return data formatted for charts (labels + datasets):
+
+- **GET `/charts/fuel`**  
+  Returns the distribution of cars by fuel type.
+
+- **GET `/charts/styles`**  
+  Returns the distribution of cars by body style.
+
+- **GET `/charts/msrp`**  
+  Returns the **average MSRP** grouped by year.
+
+> All chart endpoints support the same filtering query parameters as `/`.
+
+---
+
+### KPIs
+- **GET `/kpis`**  
+  Returns key performance indicators for the current filtered dataset:
+  - `totalCars`  
+  - `avgMSRP`  
+  - `avgMPG`  
+  - `topFuel`
+
+---
+
+### Filter Options
+- **GET `/options/:field`**  
+  Returns unique values for a given field.  
+
+  **Valid fields:**  
+  - `make`  
+  - `year`  
+  - `fuelType`  
+  - `transmission`  
+  - `style`  
+  - `category`
+
 ---
 
 ## Data Source
